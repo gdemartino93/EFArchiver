@@ -26,23 +26,26 @@ namespace EFArchiver
             {
                 throw new InvalidOperationException($"Type {typeof(T).Name} not found in the EF models");
             }
-            //obtain the name of table and schema db
-            var tableName = entityType.GetTableName() ?? typeof(T).Name;
-            var schema = entityType.GetSchema() ?? "dbo";
-
-            var storageTable = $"{tableName}_{suffixStorageTable}";
 
             // create id to access mapped column names
+            var tableMapping = entityType.GetTableMappings().FirstOrDefault();
+            if (tableMapping == null)
+            {
+                throw new InvalidOperationException($"table mapping not found for: {typeof(T).Name}");
+            }
+            var tableName = tableMapping.Table.Name;
+            var schema = tableMapping.Table.Schema ?? "dbo";
             var tableId = StoreObjectIdentifier.Table(tableName, schema);
+            var storageTable = $"{tableName}_{suffixStorageTable}";
 
             foreach (var entity in entitiesToArchive)
             {
                 _dbContext.Entry(entity).State = EntityState.Detached;
-                //take the name of clumn and value to save
+                //take the name of clumns and value to move
                 var entryValues = entityType.GetProperties()
                     .Select(p => new
                     {
-                        Name = p.GetColumnName(tableId),
+                        Name = p.GetColumnName(),
                         Value = typeof(T).GetProperty(p.Name)!.GetValue(entity)
                     }).ToList();
 
