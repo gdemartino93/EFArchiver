@@ -5,6 +5,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<LangVersion>latest</LangVersion>
+
+	 <!-- Nuget -->
+	 <Version>0.1.0-preview1</Version>
+	  <PackageId>EFArchiver</PackageId>
+	  <Authors>gdemartino93</Authors>
+	  <Company>EFArchiver</Company>
+	  <Description>Library for automatic storage and partitioning of entities in EF</Description>
+	  <RepositoryUrl>https://github.com/gdemartino93/EFArchiver</RepositoryUrl>
+	  <PackageTags>efcore entityframework partitioning archive archiviazione partizionamento backup storage</PackageTags>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
   </PropertyGroup>
 
   <ItemGroup>
