@@ -18,11 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Properties\Data\" />
-    <Folder Include="Properties\Controllers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\EFArchiver\EFArchiver.csproj" />
   </ItemGroup>
 
