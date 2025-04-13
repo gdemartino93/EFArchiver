@@ -84,7 +84,7 @@ namespace EFArchiver
                 body = Expression.LessThan(property, constant);
             }
             // casr EqualTo for match exact value
-            else if (!string.IsNullOrEmpty(settings.EqualTo))
+            else if (settings.EqualTo is not null)
             {
                 var targetValue = Convert.ChangeType(settings.EqualTo, keyProp.PropertyType);
                 var constant = Expression.Constant(targetValue, keyProp.PropertyType);
