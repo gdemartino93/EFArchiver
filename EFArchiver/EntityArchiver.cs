@@ -14,19 +14,30 @@ namespace EFArchiver
 
         public async Task ArchiveAsync(Func<T, bool> predicate, string suffixStorageTable)
         {
-            var set = _dbContext.Set<T>();
-
-            var entitiesToArchive = set.Where(predicate).ToList();
-            if (!entitiesToArchive.Any())
-            {
-                return;
-            }
-
             var entityType = _dbContext.Model.FindEntityType(typeof(T));
             if (entityType == null)
             {
                 throw new InvalidOperationException($"Type {typeof(T).Name} not found in the EF models");
             }
+
+            var set = _dbContext.Set<T>();
+            // get all the navigation props of entity
+            var navigationProps = entityType.GetNavigations()
+                .Select(np => np.Name)
+                .ToList();
+
+            IQueryable<T> query = set;
+
+            // apply dinamically include for each prop
+            foreach (var navProp in navigationProps)
+            {
+                query = query.Include(navProp);
+            }
+            // load entities with navigation proprieties included
+            var entitiesToArchive = query.Where(predicate).ToList();
+
+
+
 
             // create id to access mapped column names
             var tableMapping = entityType.GetTableMappings().FirstOrDefault();
