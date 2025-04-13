@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using System.Reflection;
 
 namespace EFArchiver
 {
@@ -43,11 +44,16 @@ namespace EFArchiver
                 _dbContext.Entry(entity).State = EntityState.Detached;
                 //take the name of clumns and value to move
                 var entryValues = entityType.GetProperties()
+                    // where => include only the props that exist in the rntime type
+                    .Where(p => entity.GetType().GetProperty(p.Name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy) != null)
                     .Select(p => new
                     {
-                        Name = p.GetColumnName(),
-                        Value = typeof(T).GetProperty(p.Name)!.GetValue(entity)
-                    }).ToList();
+                        Name = p.GetColumnBaseName(),
+                        // use runtime of entity to get the props (includes inherited)
+                        Value = entity.GetType().GetProperty(p.Name, BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy)!.GetValue(entity)
+                    })
+                    .ToList();
+
 
                 var columnList = string.Join(", ", entryValues.Select(x => $"[{x.Name}]"));
                 var valueList = string.Join(", ", entryValues.Select(x => EntityArchiver<T>.FormatValueForSql(x.Value)));
