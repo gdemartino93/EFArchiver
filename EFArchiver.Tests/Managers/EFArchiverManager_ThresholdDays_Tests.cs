@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace EFArchiver.Tests.Managers
 {
-    public class EFArchiverManagerTests
+    public class EFArchiverManager_ThresholdDays_Tests
     {
         public class Person
         {
