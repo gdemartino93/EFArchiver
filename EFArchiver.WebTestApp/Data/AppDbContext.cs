@@ -15,6 +15,15 @@ namespace EFArchiver.WebTestApp.Data
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<Person>().ToTable("People");
+
+            modelBuilder.Entity<Profile>()
+                .ToTable("Profiles");
+
+            modelBuilder.Entity<Person>()
+                .HasOne(p => p.Profile)
+                .WithOne(p => p.Person)
+                .HasForeignKey<Profile>(pr => pr.PersonId);
+                
         }
     }
 }
