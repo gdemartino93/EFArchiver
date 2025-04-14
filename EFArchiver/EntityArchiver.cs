@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace EFArchiver
@@ -11,7 +13,7 @@ namespace EFArchiver
         {
             _dbContext = dbContext;
         }
-
+        
         public async Task ArchiveAsync(Func<T, bool> predicate, string suffixStorageTable)
         {
             var entityType = _dbContext.Model.FindEntityType(typeof(T));
@@ -35,9 +37,10 @@ namespace EFArchiver
             }
             // load entities with navigation proprieties included
             var entitiesToArchive = query.Where(predicate).ToList();
-
-
-
+            if (!entitiesToArchive.Any())
+            {
+                return;
+            }
 
             // create id to access mapped column names
             var tableMapping = entityType.GetTableMappings().FirstOrDefault();
@@ -74,8 +77,59 @@ namespace EFArchiver
                 set.Remove(entity);
             }
             await _dbContext.SaveChangesAsync();
-        }
 
+            await ArchiveRelatedEntitiesAsync(entitiesToArchive, suffixStorageTable);
+        }
+        private async Task ArchiveRelatedEntitiesAsync(List<T> entitiesToArchive, string suffixStorageTable)
+        {
+            var entityType = _dbContext.Model.FindEntityType(typeof(T));
+            if (entityType == null)
+            {
+                return;
+            }
+            // archive related entities (navigation props)
+            foreach (var navigation in entityType.GetNavigations())
+            {
+                var relatedType = navigation.TargetEntityType.ClrType;
+                // create new archiver for related entities
+                var archiverType = typeof(EntityArchiver<>).MakeGenericType(relatedType);
+                var archiverInstance = Activator.CreateInstance(archiverType, _dbContext);
+
+                // get the inverse property name eg. PersonId
+                var fkPropertyName = navigation.ForeignKey.Properties
+                    .FirstOrDefault(p => p.DeclaringEntityType.ClrType == relatedType)?.Name;
+
+                if (string.IsNullOrEmpty(fkPropertyName))
+                    continue;
+
+                // get list of related foreign keys (eg all the main entity archived)
+                var parentIds = entitiesToArchive
+                    .Select(e => typeof(T).GetProperty("Id")?.GetValue(e))
+                    .Where(id => id != null)
+                    .ToList();
+
+                if (!parentIds.Any())
+                {
+                    continue;
+                }
+
+                // build expression: x => parentIds.Contains(x.PersonId)
+                var parameter = Expression.Parameter(relatedType, "x");
+                var foreignKeyProperty = Expression.Property(parameter, fkPropertyName);
+                var containsMethod = typeof(List<object>).GetMethod("Contains", new[] { typeof(object) })!;
+                var parentIdList = Expression.Constant(parentIds);
+                var body = Expression.Call(parentIdList, containsMethod, Expression.Convert(foreignKeyProperty, typeof(object)));
+                var lambdaType = typeof(Func<,>).MakeGenericType(relatedType, typeof(bool));
+                var predicate = Expression.Lambda(lambdaType, body, parameter).Compile();
+                var method = archiverType.GetMethod("ArchiveAsync");
+
+                if (method != null)
+                {
+                    await (Task)method.Invoke(archiverInstance, new object[] { predicate, suffixStorageTable })!;
+                }
+            }
+        }
+        
         /// <summary>
         /// safe format values
         /// </summary>

@@ -24,6 +24,8 @@ namespace EFArchiver
         {
             // get all entities in the model marked with [PartitionedEntity]
             var entities = PartitionEntityScanner.GetPartitionedEntities(_dbContext);
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+
             foreach (var entityType in entities)
             {
                 var clrType = entityType.ClrType;
@@ -56,6 +58,8 @@ namespace EFArchiver
                     await task;
                 }
             }
+            await transaction.CommitAsync();
+
         }
 
         /// <summary>
