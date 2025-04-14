@@ -11,5 +11,10 @@ namespace EFArchiver.WebTestApp.Models
         [PartitionKey(ThresholdDays = 90)]
         public DateTime CreatedAt { get; set; }
         public Profile? Profile { get; set; }
+
+        public Person()
+        {
+            
+        }
     }
 }

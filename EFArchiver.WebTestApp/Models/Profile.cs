@@ -11,5 +11,11 @@ namespace EFArchiver.WebTestApp.Models
         public Guid PersonId { get; set; }
         [JsonIgnore]
         public Person? Person { get; set; }
+
+        public Profile(string bio, string avatarUrl)
+        {
+            Bio = bio;
+            AvatarUrl = avatarUrl;
+        }
     }
 }

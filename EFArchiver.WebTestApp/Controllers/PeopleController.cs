@@ -35,8 +35,17 @@ namespace EFArchiver.WebTestApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddPerson([FromBody] Person person)
+        public async Task<IActionResult> AddPerson()
         {
+            Profile profile = new Profile("bio", "avatar");
+            Person person = new Person
+            {
+                Name = "marco",
+                LastName = "rossi",
+                CreatedAt = DateTime.Now.AddYears(-1),
+                Profile = profile
+            };
+
             _context.People.Add(person);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetPeople), new { person.Id }, person);
